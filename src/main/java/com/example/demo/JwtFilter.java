@@ -1,40 +1,41 @@
 package com.example.demo;
 
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
 
 @Component
-public class JwtFilter extends GenericFilter {
+public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtUtil jwtUtil;
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-        HttpServletRequest request = (HttpServletRequest) req;
         String path = request.getRequestURI();
 
         // Skip JWT validation for public endpoints
-        if (path.equals("/api/login") ||
-            path.equals("/api/register") ||
-            path.equals("/api/AddAdmin") ||
-            path.equals("/api/users/search") ||
-            path.equals("/api/users/delete")) {
-            chain.doFilter(req, res);
+        if (path.startsWith("/api/login") ||
+            path.startsWith("/api/register") ||
+            path.startsWith("/api/AddAdmin") ||
+            path.startsWith("/api/users/search") ||
+            path.startsWith("/api/users/delete")) {
+            filterChain.doFilter(request, response);
             return;
         }
 
-        // Proceed with JWT validation
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -43,13 +44,12 @@ public class JwtFilter extends GenericFilter {
                 Claims claims = jwtUtil.extractClaims(token);
                 request.setAttribute("claims", claims);
 
-                // ✅ This line tells Spring Security the user is authenticated
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(claims.getSubject(), null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }
 
-        chain.doFilter(req, res);
+        filterChain.doFilter(request, response);
     }
 }
