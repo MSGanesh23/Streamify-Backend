@@ -12,7 +12,7 @@ public class CorsConfig {
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-        configuration.addAllowedOrigin("http://localhost:5173"); // Allow your React app's origin
+        configuration.addAllowedOrigin("http://localhost:8085"); // Allow your React app's origin
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
 
